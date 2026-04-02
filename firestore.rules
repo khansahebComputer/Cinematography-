@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required) - The user's unique ID
+    //   - email: string (required) - The user's email address
+    //   - displayName: string (optional) - The user's display name
+    //   - photoURL: string (optional) - The user's profile picture URL
+    //   - role: string (required) - 'admin' or 'user'
+    //   - createdAt: number (required) - Timestamp of creation
+    //
+    // Collection: projects
+    // Document ID: {projectId}
+    // Fields:
+    //   - id: string (required) - The project's unique ID
+    //   - title: string (required) - The project's title
+    //   - description: string (optional) - The project's description
+    //   - script: string (optional) - The project's script
+    //   - scenes: array (optional) - List of Scene objects
+    //   - characters: array (optional) - List of Character objects
+    //   - createdAt: number (required) - Timestamp of creation
+    //   - updatedAt: number (required) - Timestamp of last update
+    //   - aspectRatio: string (required) - '16:9', '9:16', '1:1'
+    //   - userId: string (required) - The UID of the owner
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "khansahebcomputer@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'title', 'userId', 'createdAt', 'updatedAt']) &&
+             data.id is string &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.userId is string &&
+             data.createdAt is number &&
+             data.updatedAt is number &&
+             data.aspectRatio in ['16:9', '9:16', '1:1'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data) && request.resource.data.role == 'user';
+      allow update: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+      allow delete: if isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidProject(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin()) && isValidProject(request.resource.data) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

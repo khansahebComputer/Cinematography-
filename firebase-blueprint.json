@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "A video creation project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "script": { "type": "string" },
+        "scenes": {
+          "type": "array",
+          "items": { "$ref": "Scene" }
+        },
+        "characters": {
+          "type": "array",
+          "items": { "$ref": "Character" }
+        },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "aspectRatio": { "type": "string", "enum": ["16:9", "9:16", "1:1"] },
+        "userId": { "type": "string", "description": "The UID of the owner" }
+      },
+      "required": ["id", "title", "userId", "createdAt", "updatedAt"]
+    },
+    "Scene": {
+      "title": "Scene",
+      "description": "A single scene in a video",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "index": { "type": "number" },
+        "dialogue": { "type": "string" },
+        "visualPrompt": { "type": "string" },
+        "duration": { "type": "number" },
+        "status": { "type": "string", "enum": ["idle", "generating", "completed", "error"] },
+        "videoUrl": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "audioUrl": { "type": "string" }
+      },
+      "required": ["id", "index", "dialogue", "visualPrompt", "duration", "status"]
+    },
+    "Character": {
+      "title": "Character",
+      "description": "A character in the video",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "imagePrompt": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["id", "name", "description", "imagePrompt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Video creation projects"
+    }
+  }
+}

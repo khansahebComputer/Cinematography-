@@ -1,0 +1,8 @@
+{
+  "name": "Cinamato AI Studio",
+  "description": "Professional AI Video Creation Platform. Generate scripts, characters, voiceovers, and cinematic videos in one place.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
